@@ -31,6 +31,8 @@ export default function BookingPage() {
   const [bookingDate, setBookingDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('09:00');
   const [duration, setDuration] = useState(30);
+  const [endTime, setEndTime] = useState('');
+  const [useEndTime, setUseEndTime] = useState(false);
   const [subject, setSubject] = useState('');
 
   const [isBooking, setIsBooking] = useState(false);
@@ -127,7 +129,9 @@ export default function BookingPage() {
     try {
       const selectedRoomObjects = rooms.filter(r => selectedRooms.includes(r.email));
       const startDateTime = new Date(`${bookingDate}T${startTime}:00`);
-      const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
+      const endDateTime = useEndTime && endTime
+        ? new Date(`${bookingDate}T${endTime}:00`)
+        : new Date(startDateTime.getTime() + duration * 60000);
 
       // Build location name from all selected rooms
       const locationName = selectedRoomObjects.map(r => r.name).join(' + ');
@@ -289,25 +293,94 @@ export default function BookingPage() {
             />
           </div>
 
-          {/* Duration */}
-          <div className="mb-6">
-            <label className="block text-white/70 text-sm mb-3">Duration</label>
-            <div className="grid grid-cols-4 gap-3">
-              {[15, 30, 45, 60, 90, 120].map((mins) => (
-                <button
-                  key={mins}
-                  onClick={() => setDuration(mins)}
-                  className={`py-3 rounded-xl font-medium transition-all ${
-                    duration === mins
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white/10 text-white/70 hover:bg-white/20'
-                  }`}
-                >
-                  {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
-                </button>
-              ))}
+          {/* Duration Mode Toggle */}
+          <div className="mb-4">
+            <label className="block text-white/70 text-sm mb-3">End Time Mode</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setUseEndTime(false)}
+                className={`py-3 rounded-xl font-medium transition-all ${
+                  !useEndTime
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                Duration
+              </button>
+              <button
+                onClick={() => setUseEndTime(true)}
+                className={`py-3 rounded-xl font-medium transition-all ${
+                  useEndTime
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                End Time
+              </button>
             </div>
           </div>
+
+          {/* Duration Selection */}
+          {!useEndTime && (
+            <div className="mb-6">
+              <label className="block text-white/70 text-sm mb-3">Duration</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[15, 30, 45, 60, 90, 120].map((mins) => (
+                  <button
+                    key={mins}
+                    onClick={() => setDuration(mins)}
+                    className={`py-3 rounded-xl font-medium transition-all ${
+                      duration === mins
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    }`}
+                  >
+                    {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* End Time Selection */}
+          {useEndTime && (
+            <div className="mb-6">
+              <label className="block text-white/70 text-sm mb-2">End Time</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all"
+              />
+              {/* Quick presets for all day */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <button
+                  onClick={() => setEndTime('12:00')}
+                  className={`py-2 rounded-lg text-sm transition-all ${
+                    endTime === '12:00' ? 'bg-blue-500/50 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  12:00
+                </button>
+                <button
+                  onClick={() => setEndTime('17:00')}
+                  className={`py-2 rounded-lg text-sm transition-all ${
+                    endTime === '17:00' ? 'bg-blue-500/50 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  17:00
+                </button>
+                <button
+                  onClick={() => setEndTime('18:00')}
+                  className={`py-2 rounded-lg text-sm transition-all ${
+                    endTime === '18:00' ? 'bg-blue-500/50 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  18:00
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Subject */}
           <div className="mb-6">
@@ -339,13 +412,15 @@ export default function BookingPage() {
                 <div className="flex justify-between">
                   <span>Time:</span>
                   <span className="text-white">
-                    {startTime} - {format(new Date(new Date(`${bookingDate}T${startTime}:00`).getTime() + duration * 60000), 'HH:mm')}
+                    {startTime} - {useEndTime && endTime ? endTime : format(new Date(new Date(`${bookingDate}T${startTime}:00`).getTime() + duration * 60000), 'HH:mm')}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Duration:</span>
-                  <span className="text-white">{duration >= 60 ? `${duration / 60} hour${duration > 60 ? 's' : ''}` : `${duration} minutes`}</span>
-                </div>
+                {!useEndTime && (
+                  <div className="flex justify-between">
+                    <span>Duration:</span>
+                    <span className="text-white">{duration >= 60 ? `${duration / 60} hour${duration > 60 ? 's' : ''}` : `${duration} minutes`}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
