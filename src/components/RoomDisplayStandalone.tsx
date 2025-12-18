@@ -68,6 +68,41 @@ export default function RoomDisplayStandalone() {
     return () => clearInterval(timer);
   }, []);
 
+  // 保持屏幕常亮 (Wake Lock API)
+  useEffect(() => {
+    let wakeLock: WakeLockSentinel | null = null;
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          console.log('Screen Wake Lock activated');
+        }
+      } catch (err) {
+        console.log('Wake Lock error:', err);
+      }
+    };
+
+    // 请求 Wake Lock
+    requestWakeLock();
+
+    // 页面重新可见时重新请求 (切换标签页后回来)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLock) {
+        wakeLock.release();
+      }
+    };
+  }, []);
+
   // 加载房间配置
   useEffect(() => {
     const saved = localStorage.getItem('roomConfig');
