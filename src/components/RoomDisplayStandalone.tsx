@@ -178,8 +178,8 @@ export default function RoomDisplayStandalone() {
       setNextMeeting(data.nextMeeting);
       setAllEvents(data.allEvents);
     } catch (err) {
-      console.error('获取日历数据失败:', err);
-      setError('无法获取日历数据');
+      console.error('Failed to fetch calendar data:', err);
+      setError('Unable to fetch calendar data');
 
       if (tokenInfo.refreshToken) {
         await refreshToken(tokenInfo.refreshToken);
@@ -231,8 +231,8 @@ export default function RoomDisplayStandalone() {
       // 刷新日历数据
       await fetchCalendarData();
     } catch (err) {
-      console.error('预订失败:', err);
-      setError('预订失败，请重试');
+      console.error('Booking failed:', err);
+      setError('Booking failed, please try again');
     } finally {
       setIsBooking(false);
     }
@@ -248,8 +248,8 @@ export default function RoomDisplayStandalone() {
       // 刷新日历数据
       await fetchCalendarData();
     } catch (err) {
-      console.error('结束会议失败:', err);
-      setError('无法结束会议，请重试');
+      console.error('End meeting failed:', err);
+      setError('Unable to end meeting, please try again');
     } finally {
       setIsEndingMeeting(false);
     }

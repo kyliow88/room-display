@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "会议室显示系统",
-  description: "实时显示会议室预订状态",
+  title: "Meeting Room Display",
+  description: "Real-time meeting room availability display",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

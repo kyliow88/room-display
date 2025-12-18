@@ -27,7 +27,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
 
-  // 请求 device code
+  // Request device code
   const requestDeviceCode = async () => {
     try {
       setStatus('waiting');
@@ -51,7 +51,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
     }
   };
 
-  // 轮询获取 token
+  // Poll for token
   const pollForToken = useCallback(async () => {
     if (!deviceCodeInfo) return;
 
@@ -73,7 +73,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
           expiresAt: Date.now() + data.expiresIn * 1000,
         };
 
-        // 保存到 localStorage
+        // Save to localStorage
         localStorage.setItem('deviceTokenInfo', JSON.stringify(tokenInfo));
 
         setStatus('success');
@@ -82,7 +82,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
         setStatus('error');
         setError(data.error || 'Authorization failed');
       }
-      // 如果是 pending，继续等待
+      // If pending, continue waiting
     } catch (err) {
       console.error('Poll error:', err);
       setStatus('error');
@@ -90,13 +90,13 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
     }
   }, [deviceCodeInfo, onLoginSuccess]);
 
-  // 轮询逻辑
+  // Polling logic
   useEffect(() => {
     if (status !== 'waiting' || !deviceCodeInfo) return;
 
     console.log('Starting polling with interval:', deviceCodeInfo.interval || 5, 'seconds');
 
-    // 立即执行一次
+    // Execute immediately
     pollForToken();
 
     const interval = setInterval(() => {
@@ -109,7 +109,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
     };
   }, [status, deviceCodeInfo, pollForToken]);
 
-  // 倒计时
+  // Countdown
   useEffect(() => {
     if (countdown <= 0 || status !== 'waiting') return;
 
@@ -127,7 +127,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
     return () => clearInterval(timer);
   }, [countdown, status]);
 
-  // 重试
+  // Retry
   const handleRetry = () => {
     setStatus('idle');
     setDeviceCodeInfo(null);
@@ -135,7 +135,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
     setCountdown(0);
   };
 
-  // 格式化倒计时
+  // Format countdown
   const formatCountdown = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -145,37 +145,37 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-8">
       <div className="max-w-lg w-full">
-        {/* 标题 */}
+        {/* Title */}
         <h1 className="text-4xl font-bold text-white text-center mb-8">
-          会议室显示系统
+          Meeting Room Display
         </h1>
 
-        {/* 初始状态 - 显示两种登录方式 */}
+        {/* Initial state */}
         {status === 'idle' && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center">
             <p className="text-gray-300 mb-8 text-lg">
-              选择登录方式连接 Microsoft 365 日历
+              Connect to Microsoft 365 Calendar
             </p>
 
             <button
               onClick={requestDeviceCode}
               className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-semibold rounded-xl transition-all mb-4"
             >
-              使用代码登录
+              Login with Code
             </button>
 
             <p className="text-gray-500 text-sm">
-              适合平板等不方便输入的设备
+              Perfect for tablets and kiosk devices
             </p>
           </div>
         )}
 
-        {/* 等待用户输入代码 */}
+        {/* Waiting for user to enter code */}
         {status === 'waiting' && deviceCodeInfo && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center">
             <div className="mb-6">
               <p className="text-gray-300 text-lg mb-4">
-                请在手机或电脑上访问：
+                Visit this URL on your phone or computer:
               </p>
               <div className="bg-white/20 rounded-xl p-4 mb-6">
                 <a
@@ -189,7 +189,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
               </div>
 
               <p className="text-gray-300 text-lg mb-4">
-                然后输入代码：
+                Then enter this code:
               </p>
               <div className="bg-blue-600 rounded-xl p-6 mb-6">
                 <span className="text-5xl font-bold text-white tracking-widest font-mono">
@@ -197,13 +197,13 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
                 </span>
               </div>
 
-              {/* 倒计时 */}
+              {/* Countdown */}
               <div className="flex items-center justify-center gap-2 text-gray-400">
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <span>等待授权中... {formatCountdown(countdown)}</span>
+                <span>Waiting for authorization... {formatCountdown(countdown)}</span>
               </div>
             </div>
 
@@ -211,12 +211,12 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
               onClick={handleRetry}
               className="text-gray-400 hover:text-white text-sm underline"
             >
-              取消
+              Cancel
             </button>
           </div>
         )}
 
-        {/* 成功 */}
+        {/* Success */}
         {status === 'success' && (
           <div className="bg-green-900/50 backdrop-blur-sm rounded-2xl p-8 text-center">
             <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -224,12 +224,12 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">登录成功！</h2>
-            <p className="text-gray-300">正在加载日历数据...</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Login Successful!</h2>
+            <p className="text-gray-300">Loading calendar data...</p>
           </div>
         )}
 
-        {/* 错误 */}
+        {/* Error */}
         {status === 'error' && (
           <div className="bg-red-900/50 backdrop-blur-sm rounded-2xl p-8 text-center">
             <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -237,13 +237,13 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">登录失败</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Login Failed</h2>
             <p className="text-gray-300 mb-6">{error}</p>
             <button
               onClick={handleRetry}
               className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-xl transition-all"
             >
-              重试
+              Retry
             </button>
           </div>
         )}

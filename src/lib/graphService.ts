@@ -80,7 +80,7 @@ export async function getTodayEvents(accessToken: string, calendarId?: string, c
         return response.value;
       } catch (calendarError) {
         console.error('Direct calendar access failed:', calendarError);
-        throw new Error(`无法访问会议室日历。请确保已添加 Calendars.Read.Shared 权限，并且在 Azure 中已授权。`);
+        throw new Error(`Unable to access meeting room calendar. Please ensure Calendars.Read.Shared permission is added and authorized in Azure.`);
       }
     }
   }

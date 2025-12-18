@@ -28,13 +28,13 @@ export default function AdminPanel() {
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [roomConfig, setRoomConfig] = useState<RoomConfig>({ roomName: '会议室' });
+  const [roomConfig, setRoomConfig] = useState<RoomConfig>({ roomName: 'Meeting Room' });
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 检查登录状态
+  // Check login status
   useEffect(() => {
     const saved = localStorage.getItem('deviceTokenInfo');
     if (saved) {
@@ -47,7 +47,7 @@ export default function AdminPanel() {
     setLoading(false);
   }, []);
 
-  // 加载保存的配置
+  // Load saved config
   useEffect(() => {
     const saved = localStorage.getItem('roomConfig');
     if (saved) {
@@ -55,7 +55,7 @@ export default function AdminPanel() {
     }
   }, []);
 
-  // 获取日历列表
+  // Fetch calendar list
   useEffect(() => {
     const fetchCalendars = async () => {
       if (!isAuthenticated || !tokenInfo) return;
@@ -65,7 +65,7 @@ export default function AdminPanel() {
         const calendarList = await getCalendars(tokenInfo.accessToken);
         setCalendars(calendarList);
       } catch (err) {
-        console.error('获取日历列表失败:', err);
+        console.error('Failed to fetch calendars:', err);
       } finally {
         setCalendarLoading(false);
       }
@@ -74,7 +74,7 @@ export default function AdminPanel() {
     fetchCalendars();
   }, [isAuthenticated, tokenInfo]);
 
-  // 保存配置
+  // Save config
   const handleSave = () => {
     try {
       setError(null);
@@ -82,23 +82,23 @@ export default function AdminPanel() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error('保存失败:', err);
+      console.error('Save failed:', err);
       if (err instanceof Error && err.name === 'QuotaExceededError') {
-        setError('存储空间不足。请尝试使用较小的图片或输入图片网址。');
+        setError('Storage quota exceeded. Please use a smaller image or enter an image URL.');
       } else {
-        setError('保存失败，请重试');
+        setError('Save failed, please try again');
       }
     }
   };
 
-  // 登出
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem('deviceTokenInfo');
     setTokenInfo(null);
     setIsAuthenticated(false);
   };
 
-  // 压缩图片
+  // Compress image
   const compressImage = (file: File, maxWidth: number = 1920, quality: number = 0.7): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -109,7 +109,7 @@ export default function AdminPanel() {
           let width = img.width;
           let height = img.height;
 
-          // 按比例缩小
+          // Scale down proportionally
           if (width > maxWidth) {
             height = (height * maxWidth) / width;
             width = maxWidth;
@@ -120,7 +120,7 @@ export default function AdminPanel() {
 
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            reject(new Error('无法创建 canvas context'));
+            reject(new Error('Failed to create canvas context'));
             return;
           }
 
@@ -128,15 +128,15 @@ export default function AdminPanel() {
           const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
           resolve(compressedDataUrl);
         };
-        img.onerror = () => reject(new Error('图片加载失败'));
+        img.onerror = () => reject(new Error('Failed to load image'));
         img.src = e.target?.result as string;
       };
-      reader.onerror = () => reject(new Error('文件读取失败'));
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
     });
   };
 
-  // 处理图片上传
+  // Handle image upload
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -145,13 +145,13 @@ export default function AdminPanel() {
         const compressedImage = await compressImage(file);
         setRoomConfig({ ...roomConfig, backgroundImage: compressedImage });
       } catch (err) {
-        console.error('图片压缩失败:', err);
-        setError('图片处理失败，请尝试较小的图片');
+        console.error('Image compression failed:', err);
+        setError('Image processing failed, please try a smaller image');
       }
     }
   };
 
-  // 清除背景图
+  // Clear background image
   const handleClearImage = () => {
     setRoomConfig({ ...roomConfig, backgroundImage: undefined });
     if (fileInputRef.current) {
@@ -159,11 +159,11 @@ export default function AdminPanel() {
     }
   };
 
-  // 加载中
+  // Loading
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">加载中...</div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
@@ -171,93 +171,93 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
       <div className="max-w-2xl mx-auto">
-        {/* 标题 */}
+        {/* Title */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-white">后台管理</h1>
+          <h1 className="text-3xl font-bold text-white">Admin Settings</h1>
           <a
             href="/display"
             className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
           >
-            返回显示
+            Back to Display
           </a>
         </div>
 
-        {/* 未登录状态 */}
+        {/* Not logged in */}
         {!isAuthenticated && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center">
-            <p className="text-gray-400 mb-6">请先在显示页面登录 Microsoft 365 账号</p>
+            <p className="text-gray-400 mb-6">Please login on the display page first</p>
             <a
               href="/display"
               className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
             >
-              前往登录
+              Go to Login
             </a>
           </div>
         )}
 
-        {/* 已登录状态 */}
+        {/* Logged in */}
         {isAuthenticated && (
           <div className="space-y-6">
-            {/* 账号信息 */}
+            {/* Account info */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">账号信息</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">Account</h2>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white">已登录</p>
-                  <p className="text-gray-400 text-sm">使用 Device Code 登录</p>
+                  <p className="text-white">Logged in</p>
+                  <p className="text-gray-400 text-sm">Via Device Code</p>
                 </div>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 bg-red-600/50 hover:bg-red-600 text-white rounded-lg transition-all"
                 >
-                  登出
+                  Logout
                 </button>
               </div>
             </div>
 
-            {/* 房间设置 */}
+            {/* Room settings */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">房间设置</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">Room Settings</h2>
 
-              {/* 房间名称 */}
+              {/* Room name */}
               <div className="mb-6">
-                <label className="block text-gray-300 mb-2">房间名称</label>
+                <label className="block text-gray-300 mb-2">Room Name</label>
                 <input
                   type="text"
                   value={roomConfig.roomName}
                   onChange={(e) => setRoomConfig({ ...roomConfig, roomName: e.target.value })}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-all"
-                  placeholder="例如: Meeting Room A"
+                  placeholder="e.g., Meeting Room A"
                 />
               </div>
 
-              {/* 会议室 Email（直接输入） */}
+              {/* Meeting room email */}
               <div className="mb-6">
-                <label className="block text-gray-300 mb-2">会议室 Email</label>
+                <label className="block text-gray-300 mb-2">Meeting Room Email</label>
                 <input
                   type="email"
                   value={roomConfig.calendarEmail || ''}
                   onChange={(e) => setRoomConfig({ ...roomConfig, calendarEmail: e.target.value })}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-all"
-                  placeholder="例如: MeetingRoomA@it96.my"
+                  placeholder="e.g., MeetingRoomA@company.com"
                 />
                 <p className="text-gray-500 text-sm mt-2">
-                  直接输入会议室的 Email 地址
+                  Enter the meeting room&apos;s email address
                 </p>
               </div>
 
-              {/* 或者从列表选择 */}
+              {/* Or select from list */}
               <div className="mb-6">
-                <label className="block text-gray-300 mb-2">或从列表选择日历</label>
+                <label className="block text-gray-300 mb-2">Or Select Calendar</label>
                 {calendarLoading ? (
-                  <div className="text-gray-400">加载日历列表中...</div>
+                  <div className="text-gray-400">Loading calendars...</div>
                 ) : (
                   <select
                     value={roomConfig.calendarId || ''}
                     onChange={(e) => setRoomConfig({ ...roomConfig, calendarId: e.target.value || undefined })}
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-all"
                   >
-                    <option value="" className="bg-gray-800">不使用列表</option>
+                    <option value="" className="bg-gray-800">Don&apos;t use list</option>
                     {calendars.map((cal) => (
                       <option key={cal.id} value={cal.id} className="bg-gray-800">
                         {cal.name}
@@ -267,7 +267,7 @@ export default function AdminPanel() {
                 )}
               </div>
 
-              {/* 保存按钮 */}
+              {/* Save button */}
               <button
                 onClick={handleSave}
                 className={`w-full py-3 font-semibold rounded-lg transition-all ${
@@ -276,22 +276,22 @@ export default function AdminPanel() {
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
-                {saved ? '已保存!' : '保存设置'}
+                {saved ? 'Saved!' : 'Save Settings'}
               </button>
             </div>
 
-            {/* 背景图片设置 */}
+            {/* Background image settings */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">背景图片</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">Background Image</h2>
 
-              {/* 当前背景预览 */}
+              {/* Current background preview */}
               {roomConfig.backgroundImage && (
                 <div className="mb-4">
-                  <p className="text-gray-300 mb-2">当前背景：</p>
+                  <p className="text-gray-300 mb-2">Current background:</p>
                   <div className="relative w-full h-40 rounded-lg overflow-hidden">
                     <img
                       src={roomConfig.backgroundImage}
-                      alt="背景预览"
+                      alt="Background preview"
                       className="w-full h-full object-cover"
                     />
                     <button
@@ -306,9 +306,9 @@ export default function AdminPanel() {
                 </div>
               )}
 
-              {/* 上传图片 */}
+              {/* Upload image */}
               <div className="mb-4">
-                <label className="block text-gray-300 mb-2">上传图片</label>
+                <label className="block text-gray-300 mb-2">Upload Image</label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -318,9 +318,9 @@ export default function AdminPanel() {
                 />
               </div>
 
-              {/* 或输入图片 URL */}
+              {/* Or enter image URL */}
               <div>
-                <label className="block text-gray-300 mb-2">或输入图片网址</label>
+                <label className="block text-gray-300 mb-2">Or Enter Image URL</label>
                 <input
                   type="url"
                   value={roomConfig.backgroundImage?.startsWith('data:') ? '' : roomConfig.backgroundImage || ''}
@@ -330,27 +330,27 @@ export default function AdminPanel() {
                 />
               </div>
 
-              {/* 保存背景按钮 */}
+              {/* Save background button */}
               <button
                 onClick={handleSave}
                 className="w-full mt-4 py-3 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all"
               >
-                保存背景设置
+                Save Background
               </button>
             </div>
 
-            {/* 使用说明 */}
+            {/* Instructions */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">使用说明</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">Instructions</h2>
               <div className="text-gray-300 space-y-3 text-sm">
-                <p>1. 设置房间名称（显示在屏幕上）</p>
-                <p>2. 输入会议室 Email（如 MeetingRoomA@it96.my）</p>
-                <p>3. 可选：上传或输入背景图片</p>
-                <p>4. 保存设置后返回显示页面</p>
+                <p>1. Set the room name (displayed on screen)</p>
+                <p>2. Enter the meeting room email (e.g., MeetingRoomA@company.com)</p>
+                <p>3. Optional: Upload or enter a background image</p>
+                <p>4. Save settings and return to display</p>
               </div>
             </div>
 
-            {/* 错误提示 */}
+            {/* Error message */}
             {error && (
               <div className="bg-red-500/20 border border-red-500 text-red-300 p-4 rounded-lg">
                 {error}
