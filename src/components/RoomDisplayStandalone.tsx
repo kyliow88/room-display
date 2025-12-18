@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCurrentAndNextMeeting, quickBook } from '@/lib/graphService';
+import { getCurrentAndNextMeeting, quickBook, endMeetingEarly } from '@/lib/graphService';
 import { format } from 'date-fns';
 import DeviceCodeLogin from './DeviceCodeLogin';
 
 interface Meeting {
+  id?: string;
   subject: string;
   start: { dateTime: string };
   end: { dateTime: string };
@@ -41,6 +42,7 @@ export default function RoomDisplayStandalone() {
   const [bookingSubject, setBookingSubject] = useState('Quick Meeting');
   const [bookingDuration, setBookingDuration] = useState(30);
   const [isBooking, setIsBooking] = useState(false);
+  const [isEndingMeeting, setIsEndingMeeting] = useState(false);
 
   // 长按显示设置
   const handlePressStart = () => {
@@ -201,6 +203,23 @@ export default function RoomDisplayStandalone() {
     }
   };
 
+  // 结束会议
+  const handleEndMeeting = async () => {
+    if (!tokenInfo || !currentMeeting?.id || isEndingMeeting) return;
+
+    setIsEndingMeeting(true);
+    try {
+      await endMeetingEarly(tokenInfo.accessToken, currentMeeting.id);
+      // 刷新日历数据
+      await fetchCalendarData();
+    } catch (err) {
+      console.error('结束会议失败:', err);
+      setError('无法结束会议，请重试');
+    } finally {
+      setIsEndingMeeting(false);
+    }
+  };
+
   // 格式化时间
   const formatTime = (dateString: string) => {
     const date = new Date(dateString + 'Z');
@@ -342,6 +361,17 @@ export default function RoomDisplayStandalone() {
                 <div className="mt-4 pt-4 border-t border-white/10 text-white/40 text-sm">
                   Organizer: {currentMeeting.organizer.emailAddress.name}
                 </div>
+              )}
+
+              {/* End Meeting Button - only show if we have event ID */}
+              {currentMeeting.id && (
+                <button
+                  onClick={handleEndMeeting}
+                  disabled={isEndingMeeting}
+                  className="mt-4 w-full py-3 bg-red-500/20 hover:bg-red-500/40 disabled:bg-red-500/10 disabled:cursor-not-allowed text-red-400 font-semibold rounded-xl transition-all border border-red-500/30"
+                >
+                  {isEndingMeeting ? 'Ending...' : 'End Meeting Now'}
+                </button>
               )}
             </div>
           )}

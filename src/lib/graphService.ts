@@ -73,7 +73,7 @@ export async function getTodayEvents(accessToken: string, calendarId?: string, c
             startDateTime: startDateTime,
             endDateTime: endDateTime
           })
-          .select('subject,start,end,location,organizer,isAllDay')
+          .select('id,subject,start,end,location,organizer,isAllDay')
           .orderby('start/dateTime')
           .top(50)
           .get();
@@ -95,7 +95,7 @@ export async function getTodayEvents(accessToken: string, calendarId?: string, c
     .api(endpoint)
     .filter(`start/dateTime ge '${startDateTime}' and start/dateTime lt '${endDateTime}'`)
     .orderby('start/dateTime')
-    .select('subject,start,end,location,organizer,isAllDay')
+    .select('id,subject,start,end,location,organizer,isAllDay')
     .top(50)
     .get();
 
@@ -186,4 +186,23 @@ export async function quickBook(
   }
 
   return await client.api('/me/calendar/events').post(event);
+}
+
+// 结束会议（将结束时间改为现在）
+export async function endMeetingEarly(
+  accessToken: string,
+  eventId: string
+) {
+  const client = createGraphClient(accessToken);
+
+  const now = new Date();
+
+  const update = {
+    end: {
+      dateTime: now.toISOString(),
+      timeZone: 'UTC',
+    },
+  };
+
+  return await client.api(`/me/calendar/events/${eventId}`).patch(update);
 }
