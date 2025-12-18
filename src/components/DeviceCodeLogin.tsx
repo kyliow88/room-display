@@ -56,6 +56,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
     if (!deviceCodeInfo) return;
 
     try {
+      console.log('Polling for token...');
       const response = await fetch('/api/auth/device-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,6 +64,7 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
       });
 
       const data = await response.json();
+      console.log('Poll response:', data);
 
       if (data.status === 'success') {
         const tokenInfo: TokenInfo = {
@@ -76,13 +78,15 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
 
         setStatus('success');
         onLoginSuccess(tokenInfo);
-      } else if (data.status === 'failed') {
+      } else if (data.status === 'failed' || data.error) {
         setStatus('error');
         setError(data.error || 'Authorization failed');
       }
       // 如果是 pending，继续等待
     } catch (err) {
       console.error('Poll error:', err);
+      setStatus('error');
+      setError('Network error while checking authorization');
     }
   }, [deviceCodeInfo, onLoginSuccess]);
 
