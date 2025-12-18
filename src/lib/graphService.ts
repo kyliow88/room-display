@@ -138,14 +138,26 @@ export async function quickBook(
   accessToken: string,
   subject: string,
   durationMinutes: number,
-  calendarId?: string
+  roomEmail?: string,
+  roomName?: string
 ) {
   const client = createGraphClient(accessToken);
 
   const now = new Date();
   const end = new Date(now.getTime() + durationMinutes * 60000);
 
-  const event = {
+  interface EventPayload {
+    subject: string;
+    start: { dateTime: string; timeZone: string };
+    end: { dateTime: string; timeZone: string };
+    location?: { displayName: string };
+    attendees?: Array<{
+      emailAddress: { address: string; name: string };
+      type: string;
+    }>;
+  }
+
+  const event: EventPayload = {
     subject: subject,
     start: {
       dateTime: now.toISOString(),
@@ -157,10 +169,21 @@ export async function quickBook(
     },
   };
 
-  let endpoint = '/me/calendar/events';
-  if (calendarId) {
-    endpoint = `/me/calendars/${calendarId}/events`;
+  // 如果有会议室 email，添加为与会者和地点
+  if (roomEmail) {
+    event.location = {
+      displayName: roomName || roomEmail,
+    };
+    event.attendees = [
+      {
+        emailAddress: {
+          address: roomEmail,
+          name: roomName || roomEmail,
+        },
+        type: 'resource',
+      },
+    ];
   }
 
-  return await client.api(endpoint).post(event);
+  return await client.api('/me/calendar/events').post(event);
 }

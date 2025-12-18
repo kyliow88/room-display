@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCurrentAndNextMeeting } from '@/lib/graphService';
+import { getCurrentAndNextMeeting, quickBook } from '@/lib/graphService';
 import { format } from 'date-fns';
 import DeviceCodeLogin from './DeviceCodeLogin';
 
@@ -37,6 +37,10 @@ export default function RoomDisplayStandalone() {
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showBooking, setShowBooking] = useState(false);
+  const [bookingSubject, setBookingSubject] = useState('Quick Meeting');
+  const [bookingDuration, setBookingDuration] = useState(30);
+  const [isBooking, setIsBooking] = useState(false);
 
   // 长按显示设置
   const handlePressStart = () => {
@@ -171,6 +175,32 @@ export default function RoomDisplayStandalone() {
     setAllEvents([]);
   };
 
+  // 快速预订
+  const handleQuickBook = async () => {
+    if (!tokenInfo || isBooking) return;
+
+    setIsBooking(true);
+    try {
+      await quickBook(
+        tokenInfo.accessToken,
+        bookingSubject,
+        bookingDuration,
+        roomConfig.calendarEmail,
+        roomConfig.roomName
+      );
+      setShowBooking(false);
+      setBookingSubject('Quick Meeting');
+      setBookingDuration(30);
+      // 刷新日历数据
+      await fetchCalendarData();
+    } catch (err) {
+      console.error('预订失败:', err);
+      setError('预订失败，请重试');
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   // 格式化时间
   const formatTime = (dateString: string) => {
     const date = new Date(dateString + 'Z');
@@ -269,6 +299,16 @@ export default function RoomDisplayStandalone() {
               {format(currentTime, 'EEEE, MMM d')}
             </div>
           </div>
+
+          {/* 预订按钮 - 仅在空闲时显示 */}
+          {!isOccupied && !showBooking && (
+            <button
+              onClick={() => setShowBooking(true)}
+              className="mt-10 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white text-xl font-semibold rounded-2xl transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/40"
+            >
+              Book Now
+            </button>
+          )}
         </div>
 
         {/* 分隔线 */}
@@ -414,6 +454,85 @@ export default function RoomDisplayStandalone() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* 预订弹窗 */}
+      {showBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* 背景遮罩 */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowBooking(false)}
+          />
+
+          {/* 弹窗内容 */}
+          <div className="relative bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-6">Quick Book</h2>
+
+            {/* 会议名称 */}
+            <div className="mb-6">
+              <label className="block text-white/60 text-sm mb-2">Meeting Name</label>
+              <input
+                type="text"
+                value={bookingSubject}
+                onChange={(e) => setBookingSubject(e.target.value)}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-emerald-500 transition-all"
+                placeholder="Enter meeting name"
+              />
+            </div>
+
+            {/* 时长选择 */}
+            <div className="mb-8">
+              <label className="block text-white/60 text-sm mb-3">Duration</label>
+              <div className="grid grid-cols-4 gap-3">
+                {[15, 30, 45, 60].map((mins) => (
+                  <button
+                    key={mins}
+                    onClick={() => setBookingDuration(mins)}
+                    className={`py-3 rounded-xl font-medium transition-all ${
+                      bookingDuration === mins
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-white/10 text-white/70 hover:bg-white/20'
+                    }`}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 预订信息 */}
+            <div className="mb-6 p-4 bg-white/5 rounded-xl">
+              <div className="flex justify-between text-white/60 text-sm mb-2">
+                <span>Start</span>
+                <span className="text-white">{format(currentTime, 'HH:mm')}</span>
+              </div>
+              <div className="flex justify-between text-white/60 text-sm">
+                <span>End</span>
+                <span className="text-white">
+                  {format(new Date(currentTime.getTime() + bookingDuration * 60000), 'HH:mm')}
+                </span>
+              </div>
+            </div>
+
+            {/* 按钮 */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBooking(false)}
+                className="flex-1 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleQuickBook}
+                disabled={isBooking || !bookingSubject.trim()}
+                className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
+              >
+                {isBooking ? 'Booking...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
