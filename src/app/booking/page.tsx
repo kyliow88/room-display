@@ -34,6 +34,7 @@ export default function BookingPage() {
   const [endTime, setEndTime] = useState('');
   const [useEndTime, setUseEndTime] = useState(false);
   const [subject, setSubject] = useState('');
+  const [bookedBy, setBookedBy] = useState('');
 
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +118,7 @@ export default function BookingPage() {
 
   // Book meeting
   const handleBook = async () => {
-    if (!tokenInfo || selectedRooms.length === 0 || !subject.trim()) {
+    if (!tokenInfo || selectedRooms.length === 0 || !subject.trim() || !bookedBy.trim()) {
       setError('Please fill in all fields');
       return;
     }
@@ -146,7 +147,11 @@ export default function BookingPage() {
       }));
 
       const event = {
-        subject: subject,
+        subject: `${subject} (${bookedBy})`,
+        body: {
+          contentType: 'text',
+          content: `Booked by: ${bookedBy}`,
+        },
         start: {
           dateTime: startDateTime.toISOString(),
           timeZone: 'UTC',
@@ -394,8 +399,20 @@ export default function BookingPage() {
             />
           </div>
 
+          {/* Booked By */}
+          <div className="mb-6">
+            <label className="block text-white/70 text-sm mb-2">Booked By</label>
+            <input
+              type="text"
+              value={bookedBy}
+              onChange={(e) => setBookedBy(e.target.value)}
+              placeholder="Enter your name"
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-blue-500 transition-all"
+            />
+          </div>
+
           {/* Booking Summary */}
-          {selectedRooms.length > 0 && subject && (
+          {selectedRooms.length > 0 && subject && bookedBy && (
             <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
               <div className="text-white/50 text-xs uppercase tracking-wider mb-3">Booking Summary</div>
               <div className="space-y-2 text-white/80">
@@ -421,6 +438,10 @@ export default function BookingPage() {
                     <span className="text-white">{duration >= 60 ? `${duration / 60} hour${duration > 60 ? 's' : ''}` : `${duration} minutes`}</span>
                   </div>
                 )}
+                <div className="flex justify-between">
+                  <span>Booked by:</span>
+                  <span className="text-white">{bookedBy}</span>
+                </div>
               </div>
             </div>
           )}
@@ -428,7 +449,7 @@ export default function BookingPage() {
           {/* Book Button */}
           <button
             onClick={handleBook}
-            disabled={isBooking || selectedRooms.length === 0 || !subject.trim()}
+            disabled={isBooking || selectedRooms.length === 0 || !subject.trim() || !bookedBy.trim()}
             className="w-full py-4 bg-blue-500 hover:bg-blue-400 disabled:bg-blue-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
           >
             {isBooking ? 'Booking...' : (selectedRooms.length > 1 ? 'Book Rooms' : 'Book Room')}
