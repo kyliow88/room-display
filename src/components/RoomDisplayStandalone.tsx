@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getCurrentAndNextMeeting } from '@/lib/graphService';
 import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
 import DeviceCodeLogin from './DeviceCodeLogin';
 
 interface Meeting {
@@ -195,7 +194,7 @@ export default function RoomDisplayStandalone() {
   const getTimeUntilStart = (startDateString: string) => {
     const start = new Date(startDateString + 'Z');
     const diff = start.getTime() - currentTime.getTime();
-    if (diff <= 0) return 'Starting soon';
+    if (diff <= 0) return 'Starting now';
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {
@@ -221,7 +220,7 @@ export default function RoomDisplayStandalone() {
   const isOccupied = currentMeeting !== null;
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden select-none">
       {/* 背景图片 */}
       {roomConfig.backgroundImage && (
         <div
@@ -230,8 +229,8 @@ export default function RoomDisplayStandalone() {
         >
           <div className={`absolute inset-0 ${
             isOccupied
-              ? 'bg-red-900/80'
-              : 'bg-emerald-900/80'
+              ? 'bg-gradient-to-br from-red-900/90 via-red-800/85 to-rose-900/90'
+              : 'bg-gradient-to-br from-emerald-900/90 via-teal-800/85 to-cyan-900/90'
           }`} />
         </div>
       )}
@@ -240,112 +239,134 @@ export default function RoomDisplayStandalone() {
       {!roomConfig.backgroundImage && (
         <div className={`absolute inset-0 transition-all duration-1000 ${
           isOccupied
-            ? 'bg-gradient-to-br from-rose-950 via-red-900 to-orange-950'
-            : 'bg-gradient-to-br from-emerald-950 via-teal-900 to-cyan-950'
+            ? 'bg-gradient-to-br from-red-950 via-rose-900 to-red-950'
+            : 'bg-gradient-to-br from-emerald-950 via-teal-900 to-emerald-950'
         }`}>
-          {/* 背景装饰光晕 */}
+          {/* 背景装饰 */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className={`absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-[120px] opacity-40 ${
-              isOccupied ? 'bg-red-500' : 'bg-emerald-500'
+            <div className={`absolute top-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] opacity-30 ${
+              isOccupied ? 'bg-red-600' : 'bg-emerald-600'
             }`} />
-            <div className={`absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full blur-[120px] opacity-40 ${
-              isOccupied ? 'bg-orange-500' : 'bg-cyan-500'
+            <div className={`absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full blur-[150px] opacity-20 ${
+              isOccupied ? 'bg-orange-600' : 'bg-cyan-600'
             }`} />
           </div>
         </div>
       )}
 
       {/* 主内容 */}
-      <div className="relative z-10 min-h-screen flex flex-col">
+      <div className="relative z-10 min-h-screen flex flex-col p-6 md:p-10">
         {/* 顶部栏 */}
-        <div className="p-8 flex justify-between items-start">
-          <div>
-            <div className="text-white/60 text-lg font-light tracking-wide">
-              {format(currentTime, 'EEEE, MMMM d, yyyy')}
-            </div>
+        <div className="flex justify-between items-start mb-auto">
+          {/* 日期 */}
+          <div className="text-white/70 text-lg md:text-xl font-light">
+            {format(currentTime, 'EEEE')}
+            <span className="mx-2 text-white/40">|</span>
+            {format(currentTime, 'MMM d, yyyy')}
           </div>
+
+          {/* 时间 */}
           <div className="text-right">
-            <div className="text-white text-6xl font-extralight tracking-wider">
+            <div className="text-white text-5xl md:text-7xl font-thin tracking-tight tabular-nums">
               {format(currentTime, 'HH:mm')}
+            </div>
+            <div className="text-white/50 text-sm md:text-base font-light">
+              {format(currentTime, 'ss')} sec
             </div>
           </div>
         </div>
 
-        {/* 中间主要内容 */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 -mt-16">
+        {/* 中间主要区域 */}
+        <div className="flex-1 flex flex-col items-center justify-center py-8">
+          {/* 状态指示条 */}
+          <div className={`w-32 h-2 rounded-full mb-8 ${
+            isOccupied
+              ? 'bg-red-500 shadow-lg shadow-red-500/50'
+              : 'bg-emerald-500 shadow-lg shadow-emerald-500/50'
+          }`}>
+            <div className={`w-full h-full rounded-full animate-pulse ${
+              isOccupied ? 'bg-red-400' : 'bg-emerald-400'
+            }`} />
+          </div>
+
           {/* 房间名称 */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-12 tracking-wide text-center drop-shadow-lg">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight text-center">
             {roomConfig.roomName}
           </h1>
 
-          {/* 状态卡片 */}
-          <div className={`rounded-3xl p-8 md:p-12 backdrop-blur-md shadow-2xl max-w-2xl w-full ${
-            isOccupied
-              ? 'bg-white/10 border border-red-400/30'
-              : 'bg-white/10 border border-emerald-400/30'
+          {/* 状态文字 */}
+          <div className={`text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-8 ${
+            isOccupied ? 'text-red-400' : 'text-emerald-400'
           }`}>
-            {/* 状态指示器 */}
-            <div className="flex items-center justify-center gap-6 mb-8">
-              <div className={`w-6 h-6 rounded-full animate-pulse ${
-                isOccupied ? 'bg-red-500 shadow-lg shadow-red-500/50' : 'bg-emerald-500 shadow-lg shadow-emerald-500/50'
-              }`} />
-              <span className={`text-4xl md:text-5xl font-bold ${
-                isOccupied ? 'text-red-400' : 'text-emerald-400'
-              }`}>
-                {isOccupied ? 'OCCUPIED' : 'AVAILABLE'}
-              </span>
-            </div>
+            {isOccupied ? 'BUSY' : 'FREE'}
+          </div>
 
-            {/* 当前会议信息 */}
-            {currentMeeting && (
-              <div className="text-center border-t border-white/20 pt-8">
-                <div className="text-2xl md:text-3xl text-white font-semibold mb-3">
+          {/* 当前会议信息卡片 */}
+          {currentMeeting && (
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 max-w-2xl w-full border border-white/10">
+              <div className="text-center">
+                <div className="text-white/60 text-sm uppercase tracking-widest mb-2">
+                  Current Meeting
+                </div>
+                <div className="text-2xl md:text-3xl text-white font-semibold mb-4 line-clamp-2">
                   {currentMeeting.subject}
                 </div>
-                <div className="text-xl text-white/70 mb-2">
-                  {formatTime(currentMeeting.start.dateTime)} - {formatTime(currentMeeting.end.dateTime)}
+                <div className="flex items-center justify-center gap-4 text-white/80">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-lg">
+                      {formatTime(currentMeeting.start.dateTime)} - {formatTime(currentMeeting.end.dateTime)}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-lg text-white/50">
+                <div className={`mt-4 text-lg font-medium ${isOccupied ? 'text-red-300' : 'text-emerald-300'}`}>
                   {getTimeRemaining(currentMeeting.end.dateTime)}
                 </div>
                 {currentMeeting.organizer && (
-                  <div className="text-md text-white/40 mt-3">
+                  <div className="mt-3 text-white/50 text-sm">
                     Organizer: {currentMeeting.organizer.emailAddress.name}
                   </div>
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 空闲状态 */}
-            {!currentMeeting && (
+          {/* 空闲时下一场会议 */}
+          {!currentMeeting && nextMeeting && (
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 max-w-xl w-full border border-white/10">
               <div className="text-center">
-                <div className="text-xl text-white/60">
-                  {nextMeeting
-                    ? `Next meeting ${getTimeUntilStart(nextMeeting.start.dateTime)}`
-                    : 'No meetings scheduled today'}
+                <div className="text-white/50 text-sm uppercase tracking-widest mb-2">
+                  Next Meeting
+                </div>
+                <div className="text-xl text-white font-medium mb-2">
+                  {nextMeeting.subject}
+                </div>
+                <div className="text-white/60">
+                  {formatTime(nextMeeting.start.dateTime)} - {formatTime(nextMeeting.end.dateTime)}
+                  <span className="mx-2">·</span>
+                  <span className="text-emerald-400">{getTimeUntilStart(nextMeeting.start.dateTime)}</span>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* 下一个会议预告 */}
-          {nextMeeting && currentMeeting && (
-            <div className="mt-8 p-6 bg-black/20 rounded-2xl backdrop-blur-sm max-w-xl w-full">
-              <div className="text-sm text-white/50 mb-2 uppercase tracking-wider">Next Meeting</div>
-              <div className="text-xl text-white font-medium">{nextMeeting.subject}</div>
-              <div className="text-lg text-white/70 mt-1">
-                {formatTime(nextMeeting.start.dateTime)} - {formatTime(nextMeeting.end.dateTime)}
-                <span className="text-white/50 ml-3">{getTimeUntilStart(nextMeeting.start.dateTime)}</span>
-              </div>
+          {/* 今日无会议 */}
+          {!currentMeeting && !nextMeeting && (
+            <div className="text-white/50 text-xl">
+              No meetings scheduled for today
             </div>
           )}
         </div>
 
         {/* 底部今日日程 */}
         {allEvents.length > 0 && (
-          <div className="p-6 bg-black/30 backdrop-blur-sm">
-            <div className="text-white/50 text-sm mb-4 uppercase tracking-wider">Today&apos;s Schedule</div>
-            <div className="flex gap-4 overflow-x-auto pb-2">
+          <div className="mt-auto">
+            <div className="text-white/40 text-xs uppercase tracking-widest mb-3">
+              Today&apos;s Schedule
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
               {allEvents.map((event, index) => {
                 const start = new Date(event.start.dateTime + 'Z');
                 const end = new Date(event.end.dateTime + 'Z');
@@ -355,17 +376,21 @@ export default function RoomDisplayStandalone() {
                 return (
                   <div
                     key={index}
-                    className={`flex-shrink-0 px-5 py-3 rounded-xl transition-all ${
+                    className={`flex-shrink-0 px-4 py-3 rounded-xl transition-all min-w-[140px] ${
                       isNow
-                        ? 'bg-white/30 text-white border border-white/40'
+                        ? isOccupied
+                          ? 'bg-red-500/30 border border-red-400/50 text-white'
+                          : 'bg-emerald-500/30 border border-emerald-400/50 text-white'
                         : isPast
-                        ? 'bg-white/5 text-white/30'
-                        : 'bg-white/15 text-white/80'
+                        ? 'bg-white/5 text-white/30 border border-transparent'
+                        : 'bg-white/10 text-white/70 border border-white/10'
                     }`}
                   >
-                    <div className="text-sm font-semibold">{event.subject}</div>
-                    <div className="text-xs mt-1 opacity-70">
+                    <div className="text-xs opacity-70 mb-1">
                       {formatTime(event.start.dateTime)} - {formatTime(event.end.dateTime)}
+                    </div>
+                    <div className="text-sm font-medium line-clamp-1">
+                      {event.subject}
                     </div>
                   </div>
                 );
@@ -387,10 +412,10 @@ export default function RoomDisplayStandalone() {
 
       {/* 设置和登出按钮 */}
       {showSettings && (
-        <div className="absolute top-8 right-8 flex gap-3 z-30 animate-fade-in">
+        <div className="absolute top-6 right-6 flex gap-3 z-30">
           <a
             href="/display/admin"
-            className="p-4 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
+            className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
             title="Settings"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,7 +425,7 @@ export default function RoomDisplayStandalone() {
           </a>
           <button
             onClick={handleLogout}
-            className="p-4 bg-white/20 hover:bg-red-500/50 rounded-xl transition-all backdrop-blur-sm"
+            className="p-3 bg-white/20 hover:bg-red-500/50 rounded-xl transition-all backdrop-blur-sm"
             title="Logout"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,7 +437,7 @@ export default function RoomDisplayStandalone() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded-xl z-30">
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded-xl z-30 backdrop-blur-sm">
           {error}
         </div>
       )}
