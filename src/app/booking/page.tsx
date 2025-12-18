@@ -23,8 +23,11 @@ export default function BookingPage() {
   // Booking form state
   const [rooms, setRooms] = useState<RoomOption[]>([
     { name: 'Meeting Room A', email: 'meetingrooma@it96.my' },
+    { name: 'Meeting Room B', email: 'meetingroomb@it96.my' },
+    { name: 'Meeting Room C', email: 'meetingroomc@it96.my' },
   ]);
-  const [selectedRoom, setSelectedRoom] = useState<string>('');
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const [isMultiRoom, setIsMultiRoom] = useState(false);
   const [bookingDate, setBookingDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('09:00');
   const [duration, setDuration] = useState(30);
@@ -86,14 +89,33 @@ export default function BookingPage() {
     const newRooms = rooms.filter(r => r.email !== email);
     setRooms(newRooms);
     localStorage.setItem('bookingRooms', JSON.stringify(newRooms));
-    if (selectedRoom === email) {
-      setSelectedRoom('');
+    setSelectedRooms(selectedRooms.filter(e => e !== email));
+  };
+
+  // Toggle room selection
+  const toggleRoomSelection = (email: string) => {
+    if (selectedRooms.includes(email)) {
+      setSelectedRooms(selectedRooms.filter(e => e !== email));
+    } else {
+      if (isMultiRoom) {
+        setSelectedRooms([...selectedRooms, email]);
+      } else {
+        setSelectedRooms([email]);
+      }
+    }
+  };
+
+  // Switch between single and multi room mode
+  const handleModeChange = (multi: boolean) => {
+    setIsMultiRoom(multi);
+    if (!multi && selectedRooms.length > 1) {
+      setSelectedRooms([selectedRooms[0]]);
     }
   };
 
   // Book meeting
   const handleBook = async () => {
-    if (!tokenInfo || !selectedRoom || !subject.trim()) {
+    if (!tokenInfo || selectedRooms.length === 0 || !subject.trim()) {
       setError('Please fill in all fields');
       return;
     }
@@ -103,9 +125,21 @@ export default function BookingPage() {
     setSuccess(null);
 
     try {
-      const room = rooms.find(r => r.email === selectedRoom);
+      const selectedRoomObjects = rooms.filter(r => selectedRooms.includes(r.email));
       const startDateTime = new Date(`${bookingDate}T${startTime}:00`);
       const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
+
+      // Build location name from all selected rooms
+      const locationName = selectedRoomObjects.map(r => r.name).join(' + ');
+
+      // Build attendees array with all selected rooms
+      const attendees = selectedRoomObjects.map(room => ({
+        emailAddress: {
+          address: room.email,
+          name: room.name,
+        },
+        type: 'resource',
+      }));
 
       const event = {
         subject: subject,
@@ -118,17 +152,9 @@ export default function BookingPage() {
           timeZone: 'UTC',
         },
         location: {
-          displayName: room?.name || selectedRoom,
+          displayName: locationName,
         },
-        attendees: [
-          {
-            emailAddress: {
-              address: selectedRoom,
-              name: room?.name || selectedRoom,
-            },
-            type: 'resource',
-          },
-        ],
+        attendees: attendees,
       };
 
       const response = await fetch('https://graph.microsoft.com/v1.0/me/calendar/events', {
@@ -145,8 +171,10 @@ export default function BookingPage() {
         throw new Error(errorData.error?.message || 'Failed to create booking');
       }
 
-      setSuccess(`Successfully booked ${room?.name || selectedRoom} for ${format(startDateTime, 'MMM d')} at ${startTime}`);
+      const roomNames = selectedRoomObjects.map(r => r.name).join(', ');
+      setSuccess(`Successfully booked ${roomNames} for ${format(startDateTime, 'MMM d')} at ${startTime}`);
       setSubject('');
+      setSelectedRooms([]);
     } catch (err) {
       console.error('Booking error:', err);
       setError(err instanceof Error ? err.message : 'Failed to create booking');
@@ -173,33 +201,69 @@ export default function BookingPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-white">Book Meeting Room</h1>
-          <a
-            href="/display"
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
-          >
-            Back to Display
-          </a>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white text-center">Book Meeting Room</h1>
         </div>
 
         {/* Booking Form */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 mb-6">
+          {/* Booking Mode Toggle */}
+          <div className="mb-6">
+            <label className="block text-white/70 text-sm mb-3">Booking Type</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleModeChange(false)}
+                className={`py-3 rounded-xl font-medium transition-all ${
+                  !isMultiRoom
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                Single Room
+              </button>
+              <button
+                onClick={() => handleModeChange(true)}
+                className={`py-3 rounded-xl font-medium transition-all ${
+                  isMultiRoom
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                Combined Meeting
+              </button>
+            </div>
+          </div>
+
           {/* Room Selection */}
           <div className="mb-6">
-            <label className="block text-white/70 text-sm mb-2">Meeting Room</label>
-            <select
-              value={selectedRoom}
-              onChange={(e) => setSelectedRoom(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all"
-            >
-              <option value="" className="bg-slate-800">Select a room</option>
+            <label className="block text-white/70 text-sm mb-2">
+              {isMultiRoom ? 'Select Rooms (choose 2-3)' : 'Meeting Room'}
+            </label>
+            <div className="space-y-2">
               {rooms.map((room) => (
-                <option key={room.email} value={room.email} className="bg-slate-800">
-                  {room.name}
-                </option>
+                <button
+                  key={room.email}
+                  onClick={() => toggleRoomSelection(room.email)}
+                  className={`w-full flex items-center justify-between p-4 rounded-xl transition-all ${
+                    selectedRooms.includes(room.email)
+                      ? 'bg-blue-500/30 border-2 border-blue-500'
+                      : 'bg-white/5 border-2 border-transparent hover:bg-white/10'
+                  }`}
+                >
+                  <span className="text-white font-medium">{room.name}</span>
+                  {selectedRooms.includes(room.email) && (
+                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
               ))}
-            </select>
+            </div>
+            {isMultiRoom && selectedRooms.length > 0 && (
+              <div className="mt-3 text-sm text-blue-400">
+                Selected: {rooms.filter(r => selectedRooms.includes(r.email)).map(r => r.name).join(' + ')}
+              </div>
+            )}
           </div>
 
           {/* Date */}
@@ -258,13 +322,15 @@ export default function BookingPage() {
           </div>
 
           {/* Booking Summary */}
-          {selectedRoom && subject && (
+          {selectedRooms.length > 0 && subject && (
             <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
               <div className="text-white/50 text-xs uppercase tracking-wider mb-3">Booking Summary</div>
               <div className="space-y-2 text-white/80">
                 <div className="flex justify-between">
-                  <span>Room:</span>
-                  <span className="text-white">{rooms.find(r => r.email === selectedRoom)?.name}</span>
+                  <span>Room{selectedRooms.length > 1 ? 's' : ''}:</span>
+                  <span className="text-white text-right">
+                    {rooms.filter(r => selectedRooms.includes(r.email)).map(r => r.name).join(' + ')}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Date:</span>
@@ -287,10 +353,10 @@ export default function BookingPage() {
           {/* Book Button */}
           <button
             onClick={handleBook}
-            disabled={isBooking || !selectedRoom || !subject.trim()}
+            disabled={isBooking || selectedRooms.length === 0 || !subject.trim()}
             className="w-full py-4 bg-blue-500 hover:bg-blue-400 disabled:bg-blue-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
           >
-            {isBooking ? 'Booking...' : 'Book Room'}
+            {isBooking ? 'Booking...' : (selectedRooms.length > 1 ? 'Book Rooms' : 'Book Room')}
           </button>
 
           {/* Success Message */}
