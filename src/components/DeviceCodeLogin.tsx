@@ -94,11 +94,19 @@ export default function DeviceCodeLogin({ onLoginSuccess }: DeviceCodeLoginProps
   useEffect(() => {
     if (status !== 'waiting' || !deviceCodeInfo) return;
 
+    console.log('Starting polling with interval:', deviceCodeInfo.interval || 5, 'seconds');
+
+    // 立即执行一次
+    pollForToken();
+
     const interval = setInterval(() => {
       pollForToken();
     }, (deviceCodeInfo.interval || 5) * 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('Clearing polling interval');
+      clearInterval(interval);
+    };
   }, [status, deviceCodeInfo, pollForToken]);
 
   // 倒计时
