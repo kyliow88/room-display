@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const TENANT_ID = process.env.NEXT_PUBLIC_AZURE_TENANT_ID || 'common';
-const CLIENT_ID = process.env.NEXT_PUBLIC_AZURE_CLIENT_ID || '';
-
 // 轮询获取 token
 export async function POST(request: NextRequest) {
+  const TENANT_ID = process.env.NEXT_PUBLIC_AZURE_TENANT_ID || process.env.AZURE_TENANT_ID || 'common';
+  const CLIENT_ID = process.env.NEXT_PUBLIC_AZURE_CLIENT_ID || process.env.AZURE_CLIENT_ID || '';
+
   try {
     const { deviceCode } = await request.json();
 
