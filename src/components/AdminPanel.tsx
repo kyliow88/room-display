@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { loginRequest } from '@/config/authConfig';
 import { getCalendars } from '@/lib/graphService';
 
 interface Calendar {
@@ -18,16 +16,36 @@ interface RoomConfig {
   backgroundImage?: string;
 }
 
+interface TokenInfo {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
 export default function AdminPanel() {
-  const { instance, accounts } = useMsal();
-  const isAuthenticated = useIsAuthenticated();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [roomConfig, setRoomConfig] = useState<RoomConfig>({ roomName: '会议室' });
   const [calendars, setCalendars] = useState<Calendar[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 检查登录状态
+  useEffect(() => {
+    const saved = localStorage.getItem('deviceTokenInfo');
+    if (saved) {
+      const info = JSON.parse(saved) as TokenInfo;
+      if (info.expiresAt > Date.now()) {
+        setTokenInfo(info);
+        setIsAuthenticated(true);
+      }
+    }
+    setLoading(false);
+  }, []);
 
   // 加载保存的配置
   useEffect(() => {
@@ -40,36 +58,21 @@ export default function AdminPanel() {
   // 获取日历列表
   useEffect(() => {
     const fetchCalendars = async () => {
-      if (!isAuthenticated || accounts.length === 0) return;
+      if (!isAuthenticated || !tokenInfo) return;
 
       try {
-        setLoading(true);
-        const response = await instance.acquireTokenSilent({
-          ...loginRequest,
-          account: accounts[0],
-        });
-
-        const calendarList = await getCalendars(response.accessToken);
+        setCalendarLoading(true);
+        const calendarList = await getCalendars(tokenInfo.accessToken);
         setCalendars(calendarList);
       } catch (err) {
         console.error('获取日历列表失败:', err);
-        setError('无法获取日历列表');
       } finally {
-        setLoading(false);
+        setCalendarLoading(false);
       }
     };
 
     fetchCalendars();
-  }, [instance, accounts, isAuthenticated]);
-
-  // 登录
-  const handleLogin = async () => {
-    try {
-      await instance.loginPopup(loginRequest);
-    } catch (err) {
-      console.error('登录失败:', err);
-    }
-  };
+  }, [isAuthenticated, tokenInfo]);
 
   // 保存配置
   const handleSave = () => {
@@ -90,7 +93,9 @@ export default function AdminPanel() {
 
   // 登出
   const handleLogout = () => {
-    instance.logoutPopup();
+    localStorage.removeItem('deviceTokenInfo');
+    setTokenInfo(null);
+    setIsAuthenticated(false);
   };
 
   // 压缩图片
@@ -154,6 +159,15 @@ export default function AdminPanel() {
     }
   };
 
+  // 加载中
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">加载中...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
       <div className="max-w-2xl mx-auto">
@@ -171,13 +185,13 @@ export default function AdminPanel() {
         {/* 未登录状态 */}
         {!isAuthenticated && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 text-center">
-            <p className="text-gray-400 mb-6">请先登录 Microsoft 365 账号</p>
-            <button
-              onClick={handleLogin}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
+            <p className="text-gray-400 mb-6">请先在显示页面登录 Microsoft 365 账号</p>
+            <a
+              href="/display"
+              className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all"
             >
-              登录 Microsoft 365
-            </button>
+              前往登录
+            </a>
           </div>
         )}
 
@@ -189,8 +203,8 @@ export default function AdminPanel() {
               <h2 className="text-xl font-semibold text-white mb-4">账号信息</h2>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white">{accounts[0]?.name}</p>
-                  <p className="text-gray-400 text-sm">{accounts[0]?.username}</p>
+                  <p className="text-white">已登录</p>
+                  <p className="text-gray-400 text-sm">使用 Device Code 登录</p>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -235,7 +249,7 @@ export default function AdminPanel() {
               {/* 或者从列表选择 */}
               <div className="mb-6">
                 <label className="block text-gray-300 mb-2">或从列表选择日历</label>
-                {loading ? (
+                {calendarLoading ? (
                   <div className="text-gray-400">加载日历列表中...</div>
                 ) : (
                   <select
