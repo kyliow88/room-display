@@ -206,7 +206,7 @@ export default function RoomDisplayStandalone() {
   // 加载中
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-white text-2xl">Loading...</div>
       </div>
     );
@@ -218,186 +218,168 @@ export default function RoomDisplayStandalone() {
   }
 
   const isOccupied = currentMeeting !== null;
+  const statusColor = isOccupied ? 'text-red-500' : 'text-emerald-500';
+  const statusBorderColor = isOccupied ? 'border-red-500/30' : 'border-emerald-500/30';
+  const statusBgColor = isOccupied ? 'bg-red-500' : 'bg-emerald-500';
 
   return (
-    <div className="min-h-screen relative overflow-hidden select-none">
+    <div className="min-h-screen relative overflow-hidden select-none bg-slate-950">
       {/* 背景图片 */}
       {roomConfig.backgroundImage && (
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center opacity-20"
           style={{ backgroundImage: `url(${roomConfig.backgroundImage})` }}
-        >
-          <div className={`absolute inset-0 ${
-            isOccupied
-              ? 'bg-gradient-to-br from-red-900/90 via-red-800/85 to-rose-900/90'
-              : 'bg-gradient-to-br from-emerald-900/90 via-teal-800/85 to-cyan-900/90'
-          }`} />
-        </div>
+        />
       )}
 
-      {/* 默认渐变背景（无背景图时） */}
-      {!roomConfig.backgroundImage && (
-        <div className={`absolute inset-0 transition-all duration-1000 ${
-          isOccupied
-            ? 'bg-gradient-to-br from-red-950 via-rose-900 to-red-950'
-            : 'bg-gradient-to-br from-emerald-950 via-teal-900 to-emerald-950'
-        }`}>
-          {/* 背景装饰 */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className={`absolute top-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] opacity-30 ${
-              isOccupied ? 'bg-red-600' : 'bg-emerald-600'
-            }`} />
-            <div className={`absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full blur-[150px] opacity-20 ${
-              isOccupied ? 'bg-orange-600' : 'bg-cyan-600'
-            }`} />
-          </div>
-        </div>
-      )}
+      {/* 背景装饰 */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className={`absolute top-1/2 left-1/4 w-[600px] h-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[200px] opacity-10 ${statusBgColor}`} />
+      </div>
 
-      {/* 主内容 */}
-      <div className="relative z-10 min-h-screen flex flex-col p-6 md:p-10">
-        {/* 顶部栏 */}
-        <div className="flex justify-between items-start mb-auto">
-          {/* 日期 */}
-          <div className="text-white/70 text-lg md:text-xl font-light">
-            {format(currentTime, 'EEEE')}
-            <span className="mx-2 text-white/40">|</span>
-            {format(currentTime, 'MMM d, yyyy')}
-          </div>
+      {/* 主内容 - 左右分栏 */}
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
 
-          {/* 时间 */}
-          <div className="text-right">
-            <div className="text-white text-5xl md:text-7xl font-thin tracking-tight tabular-nums">
-              {format(currentTime, 'HH:mm')}
-            </div>
-            <div className="text-white/50 text-sm md:text-base font-light">
-              {format(currentTime, 'ss')} sec
-            </div>
+        {/* 左侧 - 状态区域 */}
+        <div className="lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-12">
+          {/* 状态指示点 */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className={`w-4 h-4 rounded-full animate-pulse ${statusBgColor} shadow-lg ${isOccupied ? 'shadow-red-500/50' : 'shadow-emerald-500/50'}`} />
+            <span className="text-white/50 text-sm uppercase tracking-widest">Status</span>
           </div>
-        </div>
-
-        {/* 中间主要区域 */}
-        <div className="flex-1 flex flex-col items-center justify-center py-8">
-          {/* 状态指示条 */}
-          <div className={`w-32 h-2 rounded-full mb-8 ${
-            isOccupied
-              ? 'bg-red-500 shadow-lg shadow-red-500/50'
-              : 'bg-emerald-500 shadow-lg shadow-emerald-500/50'
-          }`}>
-            <div className={`w-full h-full rounded-full animate-pulse ${
-              isOccupied ? 'bg-red-400' : 'bg-emerald-400'
-            }`} />
-          </div>
-
-          {/* 房间名称 */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight text-center">
-            {roomConfig.roomName}
-          </h1>
 
           {/* 状态文字 */}
-          <div className={`text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-8 ${
-            isOccupied ? 'text-red-400' : 'text-emerald-400'
-          }`}>
+          <div className={`text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter ${statusColor}`}>
             {isOccupied ? 'BUSY' : 'FREE'}
           </div>
 
-          {/* 当前会议信息卡片 */}
+          {/* 房间名称 */}
+          <div className="mt-8 text-center">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+              {roomConfig.roomName}
+            </h1>
+          </div>
+
+          {/* 时间显示 */}
+          <div className="mt-12 text-center">
+            <div className="text-6xl md:text-7xl font-thin text-white/90 tabular-nums tracking-tight">
+              {format(currentTime, 'HH:mm')}
+            </div>
+            <div className="text-white/40 text-lg mt-2">
+              {format(currentTime, 'EEEE, MMM d')}
+            </div>
+          </div>
+        </div>
+
+        {/* 分隔线 */}
+        <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
+        {/* 右侧 - 会议信息 */}
+        <div className="lg:w-1/2 flex flex-col p-8 lg:p-12">
+
+          {/* 当前会议 */}
           {currentMeeting && (
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 max-w-2xl w-full border border-white/10">
-              <div className="text-center">
-                <div className="text-white/60 text-sm uppercase tracking-widest mb-2">
-                  Current Meeting
+            <div className={`rounded-2xl border ${statusBorderColor} bg-white/5 backdrop-blur-sm p-6 lg:p-8 mb-6`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-2 h-2 rounded-full ${statusBgColor}`} />
+                <span className="text-white/50 text-xs uppercase tracking-widest">Current Meeting</span>
+              </div>
+              <h2 className="text-2xl lg:text-3xl font-semibold text-white mb-4">
+                {currentMeeting.subject}
+              </h2>
+              <div className="flex items-center gap-2 text-white/70 mb-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-lg">
+                  {formatTime(currentMeeting.start.dateTime)} - {formatTime(currentMeeting.end.dateTime)}
+                </span>
+              </div>
+              <div className={`text-lg font-medium ${statusColor}`}>
+                {getTimeRemaining(currentMeeting.end.dateTime)}
+              </div>
+              {currentMeeting.organizer && (
+                <div className="mt-4 pt-4 border-t border-white/10 text-white/40 text-sm">
+                  Organizer: {currentMeeting.organizer.emailAddress.name}
                 </div>
-                <div className="text-2xl md:text-3xl text-white font-semibold mb-4 line-clamp-2">
-                  {currentMeeting.subject}
-                </div>
-                <div className="flex items-center justify-center gap-4 text-white/80">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-lg">
-                      {formatTime(currentMeeting.start.dateTime)} - {formatTime(currentMeeting.end.dateTime)}
-                    </span>
-                  </div>
-                </div>
-                <div className={`mt-4 text-lg font-medium ${isOccupied ? 'text-red-300' : 'text-emerald-300'}`}>
-                  {getTimeRemaining(currentMeeting.end.dateTime)}
-                </div>
-                {currentMeeting.organizer && (
-                  <div className="mt-3 text-white/50 text-sm">
-                    Organizer: {currentMeeting.organizer.emailAddress.name}
-                  </div>
-                )}
+              )}
+            </div>
+          )}
+
+          {/* 下一场会议 */}
+          {nextMeeting && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 lg:p-8 mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-2 h-2 rounded-full bg-white/30" />
+                <span className="text-white/50 text-xs uppercase tracking-widest">Next Meeting</span>
+              </div>
+              <h3 className="text-xl lg:text-2xl font-medium text-white/90 mb-3">
+                {nextMeeting.subject}
+              </h3>
+              <div className="text-white/60">
+                {formatTime(nextMeeting.start.dateTime)} - {formatTime(nextMeeting.end.dateTime)}
+                <span className="mx-3 text-white/30">·</span>
+                <span className={statusColor}>{getTimeUntilStart(nextMeeting.start.dateTime)}</span>
               </div>
             </div>
           )}
 
-          {/* 空闲时下一场会议 */}
-          {!currentMeeting && nextMeeting && (
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 max-w-xl w-full border border-white/10">
-              <div className="text-center">
-                <div className="text-white/50 text-sm uppercase tracking-widest mb-2">
-                  Next Meeting
-                </div>
-                <div className="text-xl text-white font-medium mb-2">
-                  {nextMeeting.subject}
-                </div>
-                <div className="text-white/60">
-                  {formatTime(nextMeeting.start.dateTime)} - {formatTime(nextMeeting.end.dateTime)}
-                  <span className="mx-2">·</span>
-                  <span className="text-emerald-400">{getTimeUntilStart(nextMeeting.start.dateTime)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 今日无会议 */}
+          {/* 无会议状态 */}
           {!currentMeeting && !nextMeeting && (
-            <div className="text-white/50 text-xl">
-              No meetings scheduled for today
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className={`text-6xl mb-4 ${statusColor}`}>
+                  <svg className="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-white/50 text-xl">
+                  No meetings scheduled
+                </div>
+                <div className="text-white/30 text-sm mt-2">
+                  Room is available all day
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 今日日程 */}
+          {allEvents.length > 0 && (
+            <div className="mt-auto pt-6 border-t border-white/10">
+              <div className="text-white/40 text-xs uppercase tracking-widest mb-4">
+                Today&apos;s Schedule
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {allEvents.map((event, index) => {
+                  const start = new Date(event.start.dateTime + 'Z');
+                  const end = new Date(event.end.dateTime + 'Z');
+                  const isNow = start <= currentTime && end > currentTime;
+                  const isPast = end <= currentTime;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-4 p-3 rounded-lg transition-all ${
+                        isNow
+                          ? `${isOccupied ? 'bg-red-500/20 border-l-2 border-red-500' : 'bg-emerald-500/20 border-l-2 border-emerald-500'}`
+                          : isPast
+                          ? 'opacity-40'
+                          : 'bg-white/5'
+                      }`}
+                    >
+                      <div className="text-white/50 text-sm w-24 flex-shrink-0">
+                        {formatTime(event.start.dateTime)}
+                      </div>
+                      <div className={`text-sm flex-1 truncate ${isNow ? 'text-white font-medium' : 'text-white/70'}`}>
+                        {event.subject}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
-
-        {/* 底部今日日程 */}
-        {allEvents.length > 0 && (
-          <div className="mt-auto">
-            <div className="text-white/40 text-xs uppercase tracking-widest mb-3">
-              Today&apos;s Schedule
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
-              {allEvents.map((event, index) => {
-                const start = new Date(event.start.dateTime + 'Z');
-                const end = new Date(event.end.dateTime + 'Z');
-                const isNow = start <= currentTime && end > currentTime;
-                const isPast = end <= currentTime;
-
-                return (
-                  <div
-                    key={index}
-                    className={`flex-shrink-0 px-4 py-3 rounded-xl transition-all min-w-[140px] ${
-                      isNow
-                        ? isOccupied
-                          ? 'bg-red-500/30 border border-red-400/50 text-white'
-                          : 'bg-emerald-500/30 border border-emerald-400/50 text-white'
-                        : isPast
-                        ? 'bg-white/5 text-white/30 border border-transparent'
-                        : 'bg-white/10 text-white/70 border border-white/10'
-                    }`}
-                  >
-                    <div className="text-xs opacity-70 mb-1">
-                      {formatTime(event.start.dateTime)} - {formatTime(event.end.dateTime)}
-                    </div>
-                    <div className="text-sm font-medium line-clamp-1">
-                      {event.subject}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 隐藏的触发区域 - 长按右上角3秒显示设置 */}
@@ -415,7 +397,7 @@ export default function RoomDisplayStandalone() {
         <div className="absolute top-6 right-6 flex gap-3 z-30">
           <a
             href="/display/admin"
-            className="p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all backdrop-blur-sm"
+            className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all backdrop-blur-sm border border-white/10"
             title="Settings"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -425,7 +407,7 @@ export default function RoomDisplayStandalone() {
           </a>
           <button
             onClick={handleLogout}
-            className="p-3 bg-white/20 hover:bg-red-500/50 rounded-xl transition-all backdrop-blur-sm"
+            className="p-3 bg-white/10 hover:bg-red-500/30 rounded-xl transition-all backdrop-blur-sm border border-white/10"
             title="Logout"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -437,7 +419,7 @@ export default function RoomDisplayStandalone() {
 
       {/* 错误提示 */}
       {error && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded-xl z-30 backdrop-blur-sm">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded-xl z-30 backdrop-blur-sm">
           {error}
         </div>
       )}
