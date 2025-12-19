@@ -25,15 +25,45 @@ export default function SkeddaAdminPage() {
   useEffect(() => {
     const saved = localStorage.getItem('skeddaConfig');
     if (saved) {
-      setConfig(JSON.parse(saved));
+      const parsedConfig = JSON.parse(saved);
+      // Check if background image was stored separately
+      if (parsedConfig.backgroundImage === '__STORED_SEPARATELY__') {
+        const storedImage = localStorage.getItem('skeddaBackgroundImage');
+        if (storedImage) {
+          parsedConfig.backgroundImage = storedImage;
+        } else {
+          parsedConfig.backgroundImage = '';
+        }
+      }
+      setConfig(parsedConfig);
     }
   }, []);
 
   // Save config
   const handleSave = () => {
-    localStorage.setItem('skeddaConfig', JSON.stringify(config));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      // If background image is too large, save it separately or skip it
+      const configToSave = { ...config };
+
+      // Check if background image is too large (> 2MB base64)
+      if (configToSave.backgroundImage && configToSave.backgroundImage.length > 2 * 1024 * 1024) {
+        // Store background image separately
+        try {
+          localStorage.setItem('skeddaBackgroundImage', configToSave.backgroundImage);
+        } catch {
+          alert('Background image is too large to save. Please use a smaller image.');
+          return;
+        }
+        configToSave.backgroundImage = '__STORED_SEPARATELY__';
+      }
+
+      localStorage.setItem('skeddaConfig', JSON.stringify(configToSave));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error('Failed to save config:', error);
+      alert('Failed to save. The background image may be too large. Try using a smaller image or remove it.');
+    }
   };
 
   // Compress and handle image upload
@@ -45,13 +75,20 @@ export default function SkeddaAdminPage() {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const maxWidth = 1920;
+          // Reduce max size for smaller storage
+          const maxWidth = 1280;
+          const maxHeight = 720;
           let width = img.width;
           let height = img.height;
 
+          // Scale down to fit within max dimensions
           if (width > maxWidth) {
             height = (height * maxWidth) / width;
             width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
           }
 
           canvas.width = width;
@@ -60,7 +97,8 @@ export default function SkeddaAdminPage() {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            // Use lower quality for smaller file size
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
             setConfig({ ...config, backgroundImage: compressedDataUrl });
           }
         };

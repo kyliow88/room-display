@@ -20,7 +20,17 @@ export default function SkeddaPage() {
   useEffect(() => {
     const saved = localStorage.getItem('skeddaConfig');
     if (saved) {
-      setConfig(JSON.parse(saved));
+      const parsedConfig = JSON.parse(saved);
+      // Check if background image was stored separately
+      if (parsedConfig.backgroundImage === '__STORED_SEPARATELY__') {
+        const storedImage = localStorage.getItem('skeddaBackgroundImage');
+        if (storedImage) {
+          parsedConfig.backgroundImage = storedImage;
+        } else {
+          parsedConfig.backgroundImage = '';
+        }
+      }
+      setConfig(parsedConfig);
     }
     setLoading(false);
   }, []);
